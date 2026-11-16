@@ -36,6 +36,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -168,10 +169,10 @@ const DEFAULTS = {
     { name: "Co-Founder", mult: 5 }
   ]
 };
-const KEY = "afkatsuki-spenden-v2";
+const KEY = "afkatsuki-spenden-v3";
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { state = null; }
-if (!state || !Array.isArray(state.ranks)) state = { ...structuredClone(DEFAULTS), level: 75, max: 99, rank: 0 };
+if (!state || !Array.isArray(state.ranks)) state = { ...structuredClone(DEFAULTS), level: 75, max: 99, rank: 1 };
 
 const fmt = n => Math.round(n).toLocaleString("de-DE") + " Yang";
 const fmtMult = m => m.toLocaleString("de-DE") + "×";

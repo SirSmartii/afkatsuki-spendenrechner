@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Afkatsuki Spendenrechner</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one centered column — calculator card, then rank table, then editable guild settings */
+:root {
+  --bg: #f3f1ec;
+  --surface: #ffffff;
+  --surface-2: #ebe7de;
+  --line: #d9d2c3;
+  --fg: #1f1b14;
+  --muted: #6b6253;
+  --gold: #9a6b12;
+  --gold-soft: #f1e2bf;
+  --yang: #1d7a3e;
+  --display: "Cinzel", Georgia, serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141210; --surface: #1d1a16; --surface-2: #27231d; --line: #3a342a;
+    --fg: #efe8da; --muted: #a59b88; --gold: #e0b453; --gold-soft: #3a2f18; --yang: #4fcf7c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141210; --surface: #1d1a16; --surface-2: #27231d; --line: #3a342a;
+  --fg: #efe8da; --muted: #a59b88; --gold: #e0b453; --gold-soft: #3a2f18; --yang: #4fcf7c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 48px;
+}
+.wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 24px; }
+header h1 { font-family: var(--display); font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0; letter-spacing: .02em; text-wrap: balance; }
+header p { margin: 4px 0 0; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; display: grid; gap: 22px; }
+.label { font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.lvl-out { font-family: var(--mono); font-size: 1.5rem; color: var(--fg); }
+.field { display: grid; gap: 10px; }
+input[type=range] { width: 100%; accent-color: var(--gold); }
+.range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+.seg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 10px; }
+.seg button { font: inherit; border: 0; background: transparent; color: var(--muted); padding: 8px 4px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / .15); }
+.seg button:focus-visible, .ranks label:focus-within, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.custom { display: flex; gap: 8px; align-items: center; }
+input[type=number] { font: inherit; font-family: var(--mono); background: var(--surface-2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; width: 9em; max-width: 100%; }
+.ranks { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.ranks label { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+.ranks label:has(input:checked) { border-color: var(--gold); background: var(--gold-soft); }
+.ranks input { accent-color: var(--gold); margin: 0 8px 0 0; }
+.ranks .mult { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.result { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 4px; }
+.result .cap { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+.yang { font-family: var(--mono); font-size: clamp(1.8rem, 6vw, 2.6rem); color: var(--yang); font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
+.meta { color: var(--muted); font-size: 13px; font-family: var(--mono); }
+.periods { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 8px; font-size: 14px; }
+.periods b { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+h2 { font-family: var(--display); font-size: 1.15rem; margin: 0; }
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; font-family: var(--mono); }
+tr.active td { background: var(--gold-soft); }
+.formula { font-family: var(--mono); background: var(--surface-2); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 14px; }
+.settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.settings label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.settings input { width: 100%; }
+.note { color: var(--muted); font-size: 13px; margin: 0; }
+.btn { font: inherit; background: transparent; color: var(--gold); border: 1px solid var(--gold); border-radius: 8px; padding: 6px 12px; cursor: pointer; justify-self: start; }
+@media (max-width: 480px) { .card { padding: 18px; } .seg { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Afkatsuki Spendenrechner</h1>
+    <p>Tägliche Gildenspende nach Level und Rang.</p>
+  </header>
+
+  <section class="card" aria-label="Rechner">
+    <div class="field">
+      <div class="label"><span>Spielerlevel</span><span class="lvl-out" id="lvlOut">75</span></div>
+      <input type="range" id="level" min="1" max="99" value="75" aria-label="Spielerlevel">
+      <div class="range-ends"><span>Level 1</span><span id="maxEnd">Level 99</span></div>
+    </div>
+
+    <div class="field">
+      <div class="label"><span>Server-Maxlevel</span></div>
+      <div class="seg" id="maxSeg" role="group" aria-label="Server-Maxlevel">
+        <button type="button" data-max="99" aria-pressed="true">99</button>
+        <button type="button" data-max="105" aria-pressed="false">105</button>
+        <button type="button" data-max="120" aria-pressed="false">120</button>
+        <button type="button" data-max="150" aria-pressed="false">150</button>
+        <button type="button" data-max="custom" aria-pressed="false">Andere</button>
+      </div>
+      <div class="custom" id="customWrap" hidden>
+        <label for="customMax">Maxlevel:</label>
+        <input type="number" id="customMax" min="1" max="999" value="99">
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="label"><span>Gildenrang</span></div>
+      <div class="ranks" id="ranks"></div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <span class="cap">Tägliche Spende</span>
+      <span class="yang" id="daily">–</span>
+      <span class="meta" id="meta"></span>
+      <div class="periods">
+        <span>Woche: <b id="weekly">–</b></span>
+        <span>Monat (30 T.): <b id="monthly">–</b></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Alle Ränge auf diesem Level</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Rang</th><th class="num">Multiplikator</th><th class="num">Pro Tag</th><th class="num">Pro Woche</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Formel</h2>
+    <div class="formula">L<sub>f</sub> = 0,25 + 0,75 × (Spielerlevel ÷ Maxlevel)<sup>1,5</sup><br>Spende = Grundbetrag × L<sub>f</sub> × Rang-Multiplikator</div>
+    <p class="note">Level über dem Maxlevel zählen wie das Maxlevel. Auf Level 1 zahlt man also knapp 25 %, auf Maxlevel 100 % des Grundbetrags.</p>
+  </section>
+
+  <section class="card">
+    <h2>Gilden-Einstellungen</h2>
+    <div class="settings" id="settings">
+      <label for="base">Grundbetrag (Yang)<input type="number" id="base" min="0" step="10000" value="1000000"></label>
+    </div>
+    <p class="note">Änderungen werden nur in deinem Browser gespeichert.</p>
+    <button type="button" class="btn" id="reset">Standardwerte</button>
+  </section>
+</div>
+
+<script>
+const DEFAULTS = {
+  base: 1000000,
+  ranks: [
+    { name: "Rookie", mult: 0 },
+    { name: "Member", mult: 1 },
+    { name: "Elite", mult: 2 },
+    { name: "Executive", mult: 3 },
+    { name: "Founder", mult: 5 },
+    { name: "Co-Founder", mult: 5 }
+  ]
+};
+const KEY = "afkatsuki-spenden-v2";
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { state = null; }
+if (!state || !Array.isArray(state.ranks)) state = { ...structuredClone(DEFAULTS), level: 75, max: 99, rank: 0 };
+
+const fmt = n => Math.round(n).toLocaleString("de-DE") + " Yang";
+const fmtMult = m => m.toLocaleString("de-DE") + "×";
+const $ = id => document.getElementById(id);
+
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+function levelFactor(level, max) {
+  const r = Math.min(Math.max(level / max, 0), 1);
+  return 0.25 + 0.75 * Math.pow(r, 1.5);
+}
+
+function buildRanks() {
+  $("ranks").innerHTML = state.ranks.map((r, i) => `
+    <label><span><input type="radio" name="rank" id="rank${i}" value="${i}" ${i === state.rank ? "checked" : ""}>${r.name}</span><span class="mult">${fmtMult(r.mult)}</span></label>`).join("");
+  $("ranks").querySelectorAll("input").forEach(el => el.addEventListener("change", () => { state.rank = +el.value; render(); }));
+
+  const s = $("settings");
+  s.querySelectorAll(".rm").forEach(n => n.remove());
+  state.ranks.forEach((r, i) => {
+    const l = document.createElement("label");
+    l.className = "rm";
+    l.htmlFor = "mult" + i;
+    l.innerHTML = `Multiplikator ${r.name}<input type="number" id="mult${i}" min="0" step="0.1" value="${r.mult}">`;
+    l.querySelector("input").addEventListener("input", e => {
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v) && v >= 0) { state.ranks[i].mult = v; buildRanks(); render(); }
+    });
+    s.appendChild(l);
+  });
+}
+
+function render() {
+  const max = state.max;
+  const lvl = $("level");
+  lvl.max = max;
+  if (state.level > max) state.level = max;
+  lvl.value = state.level;
+  $("lvlOut").textContent = state.level;
+  $("maxEnd").textContent = "Level " + max;
+
+  document.querySelectorAll("#maxSeg button").forEach(b => {
+    const preset = ["99", "105", "120", "150"].includes(String(max));
+    const on = b.dataset.max === "custom" ? (!preset || state.customOpen) : (String(max) === b.dataset.max && !state.customOpen);
+    b.setAttribute("aria-pressed", on);
+  });
+  $("customWrap").hidden = !(state.customOpen || !["99", "105", "120", "150"].includes(String(max)));
+
+  const lf = levelFactor(state.level, max);
+  const rank = state.ranks[state.rank] || state.ranks[0];
+  const daily = state.base * lf * rank.mult;
+  $("daily").textContent = fmt(daily);
+  $("meta").textContent = `Level-Faktor: ${lf.toFixed(3).replace(".", ",")} · Rang-Multiplikator: ${fmtMult(rank.mult)}`;
+  $("weekly").textContent = fmt(daily * 7);
+  $("monthly").textContent = fmt(daily * 30);
+
+  $("tbody").innerHTML = state.ranks.map((r, i) => {
+    const d = state.base * lf * r.mult;
+    return `<tr class="${i === state.rank ? "active" : ""}"><td>${r.name}</td><td class="num">${fmtMult(r.mult)}</td><td class="num">${fmt(d)}</td><td class="num">${fmt(d * 7)}</td></tr>`;
+  }).join("");
+
+  $("base").value = state.base;
+  save();
+}
+
+$("level").addEventListener("input", e => { state.level = +e.target.value; render(); });
+document.querySelectorAll("#maxSeg button").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.max === "custom") { state.customOpen = true; $("customMax").value = state.max; render(); $("customMax").focus(); return; }
+  state.customOpen = false; state.max = +b.dataset.max; render();
+}));
+$("customMax").addEventListener("input", e => {
+  const v = parseInt(e.target.value, 10);
+  if (v >= 1 && v <= 999) { state.max = v; render(); }
+});
+$("base").addEventListener("input", e => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v) && v >= 0) { state.base = v; render(); }
+});
+$("reset").addEventListener("click", () => {
+  state.base = DEFAULTS.base;
+  state.ranks = structuredClone(DEFAULTS.ranks);
+  buildRanks(); render();
+});
+
+buildRanks();
+render();
+</script>
+</body>
+</html>

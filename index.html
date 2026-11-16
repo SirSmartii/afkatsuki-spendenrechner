@@ -83,81 +83,124 @@ tr.active td { background: var(--gold-soft); }
 .note { color: var(--muted); font-size: 13px; margin: 0; }
 .btn { font: inherit; background: transparent; color: var(--gold); border: 1px solid var(--gold); border-radius: 8px; padding: 6px 12px; cursor: pointer; justify-self: start; }
 @media (max-width: 480px) { .card { padding: 18px; } .seg { grid-template-columns: repeat(3, 1fr); } }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+header > div { min-width: 0; }
+.lang { display: flex; gap: 2px; background: var(--surface-2); padding: 3px; border-radius: 8px; }
+.lang button { font: inherit; font-size: 13px; font-weight: 600; border: 0; background: transparent; color: var(--muted); padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.lang button[aria-pressed=true] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .15); }
+.lang button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header>
-    <h1>Afkatsuki Spendenrechner</h1>
-    <p>Tägliche Gildenspende nach Level und Rang.</p>
+    <div>
+      <h1 data-i18n="title">Afkatsuki Spendenrechner</h1>
+      <p data-i18n="subtitle">Tägliche Gildenspende nach Level und Rang.</p>
+    </div>
+    <div class="lang" role="group" aria-label="Sprache / Language">
+      <button type="button" data-lang="de" aria-pressed="true">DE</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
   </header>
 
-  <section class="card" aria-label="Rechner">
+  <section class="card" id="calc">
     <div class="field">
-      <div class="label"><span>Spielerlevel</span><span class="lvl-out" id="lvlOut">75</span></div>
-      <input type="range" id="level" min="1" max="99" value="75" aria-label="Spielerlevel">
+      <div class="label"><span data-i18n="level">Spielerlevel</span><span class="lvl-out" id="lvlOut">75</span></div>
+      <input type="range" id="level" min="1" max="99" value="75">
       <div class="range-ends"><span>Level 1</span><span id="maxEnd">Level 99</span></div>
     </div>
 
     <div class="field">
-      <div class="label"><span>Server-Maxlevel</span></div>
-      <div class="seg" id="maxSeg" role="group" aria-label="Server-Maxlevel">
+      <div class="label"><span data-i18n="maxLevel">Server-Maxlevel</span></div>
+      <div class="seg" id="maxSeg" role="group">
         <button type="button" data-max="99" aria-pressed="true">99</button>
         <button type="button" data-max="105" aria-pressed="false">105</button>
         <button type="button" data-max="120" aria-pressed="false">120</button>
         <button type="button" data-max="150" aria-pressed="false">150</button>
-        <button type="button" data-max="custom" aria-pressed="false">Andere</button>
+        <button type="button" data-max="custom" aria-pressed="false" data-i18n="other">Andere</button>
       </div>
       <div class="custom" id="customWrap" hidden>
-        <label for="customMax">Maxlevel:</label>
+        <label for="customMax" data-i18n="maxLabel">Maxlevel:</label>
         <input type="number" id="customMax" min="1" max="999" value="99">
       </div>
     </div>
 
     <div class="field">
-      <div class="label"><span>Gildenrang</span></div>
+      <div class="label"><span data-i18n="rank">Gildenrang</span></div>
       <div class="ranks" id="ranks"></div>
     </div>
 
     <div class="result" aria-live="polite">
-      <span class="cap">Tägliche Spende</span>
+      <span class="cap" data-i18n="daily">Tägliche Spende</span>
       <span class="yang" id="daily">–</span>
       <span class="meta" id="meta"></span>
       <div class="periods">
-        <span>Woche: <b id="weekly">–</b></span>
-        <span>Monat (30 T.): <b id="monthly">–</b></span>
+        <span><span data-i18n="week">Woche</span>: <b id="weekly">–</b></span>
+        <span><span data-i18n="month">Monat (30 T.)</span>: <b id="monthly">–</b></span>
       </div>
     </div>
   </section>
 
   <section class="card">
-    <h2>Alle Ränge auf diesem Level</h2>
+    <h2 data-i18n="allRanks">Alle Ränge auf diesem Level</h2>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Rang</th><th class="num">Multiplikator</th><th class="num">Pro Tag</th><th class="num">Pro Woche</th></tr></thead>
+        <thead><tr><th data-i18n="thRank">Rang</th><th class="num" data-i18n="thMult">Multiplikator</th><th class="num" data-i18n="thDay">Pro Tag</th><th class="num" data-i18n="thWeek">Pro Woche</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
   </section>
 
   <section class="card">
-    <h2>Formel</h2>
-    <div class="formula">L<sub>f</sub> = 0,25 + 0,75 × (Spielerlevel ÷ Maxlevel)<sup>1,5</sup><br>Spende = Grundbetrag × L<sub>f</sub> × Rang-Multiplikator</div>
-    <p class="note">Level über dem Maxlevel zählen wie das Maxlevel. Auf Level 1 zahlt man also knapp 25 %, auf Maxlevel 100 % des Grundbetrags.</p>
+    <h2 data-i18n="formula">Formel</h2>
+    <div class="formula" id="formulaBox"></div>
+    <p class="note" data-i18n="formulaNote">Level über dem Maxlevel zählen wie das Maxlevel. Auf Level 1 zahlt man also knapp 25 %, auf Maxlevel 100 % des Grundbetrags.</p>
   </section>
 
   <section class="card">
-    <h2>Gilden-Einstellungen</h2>
+    <h2 data-i18n="settings">Gilden-Einstellungen</h2>
     <div class="settings" id="settings">
-      <label for="base">Grundbetrag (Yang)<input type="number" id="base" min="0" step="10000" value="1000000"></label>
+      <label for="base"><span data-i18n="base">Grundbetrag (Yang)</span><input type="number" id="base" min="0" step="10000" value="1000000"></label>
     </div>
-    <p class="note">Änderungen werden nur in deinem Browser gespeichert.</p>
-    <button type="button" class="btn" id="reset">Standardwerte</button>
+    <p class="note" data-i18n="savedLocal">Änderungen werden nur in deinem Browser gespeichert.</p>
+    <button type="button" class="btn" id="reset" data-i18n="reset">Standardwerte</button>
   </section>
 </div>
 
 <script>
+const T = {
+  de: {
+    title: "Afkatsuki Spendenrechner",
+    subtitle: "Tägliche Gildenspende nach Level und Rang.",
+    level: "Spielerlevel", maxLevel: "Server-Maxlevel", other: "Andere", maxLabel: "Maxlevel:",
+    rank: "Gildenrang", daily: "Tägliche Spende", week: "Woche", month: "Monat (30 T.)",
+    allRanks: "Alle Ränge auf diesem Level", thRank: "Rang", thMult: "Multiplikator", thDay: "Pro Tag", thWeek: "Pro Woche",
+    formula: "Formel",
+    formulaBox: "L<sub>f</sub> = 0,25 + 0,75 × (Spielerlevel ÷ Maxlevel)<sup>1,5</sup><br>Spende = Grundbetrag × L<sub>f</sub> × Rang-Multiplikator",
+    formulaNote: "Level über dem Maxlevel zählen wie das Maxlevel. Auf Level 1 zahlt man also knapp 25 %, auf Maxlevel 100 % des Grundbetrags.",
+    settings: "Gilden-Einstellungen", base: "Grundbetrag (Yang)",
+    savedLocal: "Änderungen werden nur in deinem Browser gespeichert.", reset: "Standardwerte",
+    multFor: "Multiplikator", meta: (lf, m) => `Level-Faktor: ${lf} · Rang-Multiplikator: ${m}`,
+    locale: "de-DE", docTitle: "Afkatsuki Spendenrechner", calc: "Rechner"
+  },
+  en: {
+    title: "Afkatsuki Donation Calculator",
+    subtitle: "Daily guild donation by level and rank.",
+    level: "Player level", maxLevel: "Server max level", other: "Other", maxLabel: "Max level:",
+    rank: "Guild rank", daily: "Daily donation", week: "Week", month: "Month (30 d)",
+    allRanks: "All ranks at this level", thRank: "Rank", thMult: "Multiplier", thDay: "Per day", thWeek: "Per week",
+    formula: "Formula",
+    formulaBox: "L<sub>f</sub> = 0.25 + 0.75 × (player level ÷ max level)<sup>1.5</sup><br>Donation = base amount × L<sub>f</sub> × rank multiplier",
+    formulaNote: "Levels above the max level count as the max level. At level 1 you pay just over 25 %, at max level 100 % of the base amount.",
+    settings: "Guild settings", base: "Base amount (Yang)",
+    savedLocal: "Changes are only saved in your browser.", reset: "Reset to defaults",
+    multFor: "Multiplier", meta: (lf, m) => `Level factor: ${lf} · Rank multiplier: ${m}`,
+    locale: "en-US", docTitle: "Afkatsuki Donation Calculator", calc: "Calculator"
+  }
+};
+
 const DEFAULTS = {
   base: 1000000,
   ranks: [
@@ -173,9 +216,11 @@ const KEY = "afkatsuki-spenden-v3";
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { state = null; }
 if (!state || !Array.isArray(state.ranks)) state = { ...structuredClone(DEFAULTS), level: 75, max: 99, rank: 1 };
+if (!state.lang) state.lang = (navigator.language || "de").toLowerCase().startsWith("de") ? "de" : "en";
 
-const fmt = n => Math.round(n).toLocaleString("de-DE") + " Yang";
-const fmtMult = m => m.toLocaleString("de-DE") + "×";
+const t = () => T[state.lang] || T.de;
+const fmt = n => Math.round(n).toLocaleString(t().locale) + " Yang";
+const fmtMult = m => m.toLocaleString(t().locale) + "×";
 const $ = id => document.getElementById(id);
 
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -183,6 +228,18 @@ function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catc
 function levelFactor(level, max) {
   const r = Math.min(Math.max(level / max, 0), 1);
   return 0.25 + 0.75 * Math.pow(r, 1.5);
+}
+
+function applyLang() {
+  const L = t();
+  document.documentElement.lang = state.lang;
+  document.title = L.docTitle;
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = L[el.dataset.i18n]; });
+  $("formulaBox").innerHTML = L.formulaBox;
+  $("calc").setAttribute("aria-label", L.calc);
+  $("level").setAttribute("aria-label", L.level);
+  $("maxSeg").setAttribute("aria-label", L.maxLevel);
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === state.lang));
 }
 
 function buildRanks() {
@@ -196,7 +253,7 @@ function buildRanks() {
     const l = document.createElement("label");
     l.className = "rm";
     l.htmlFor = "mult" + i;
-    l.innerHTML = `Multiplikator ${r.name}<input type="number" id="mult${i}" min="0" step="0.1" value="${r.mult}">`;
+    l.innerHTML = `${t().multFor} ${r.name}<input type="number" id="mult${i}" min="0" step="0.1" value="${r.mult}">`;
     l.querySelector("input").addEventListener("input", e => {
       const v = parseFloat(e.target.value);
       if (!isNaN(v) && v >= 0) { state.ranks[i].mult = v; buildRanks(); render(); }
@@ -225,7 +282,7 @@ function render() {
   const rank = state.ranks[state.rank] || state.ranks[0];
   const daily = state.base * lf * rank.mult;
   $("daily").textContent = fmt(daily);
-  $("meta").textContent = `Level-Faktor: ${lf.toFixed(3).replace(".", ",")} · Rang-Multiplikator: ${fmtMult(rank.mult)}`;
+  $("meta").textContent = t().meta(lf.toLocaleString(t().locale, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), fmtMult(rank.mult));
   $("weekly").textContent = fmt(daily * 7);
   $("monthly").textContent = fmt(daily * 30);
 
@@ -238,6 +295,9 @@ function render() {
   save();
 }
 
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
+  state.lang = b.dataset.lang; applyLang(); buildRanks(); render();
+}));
 $("level").addEventListener("input", e => { state.level = +e.target.value; render(); });
 document.querySelectorAll("#maxSeg button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.max === "custom") { state.customOpen = true; $("customMax").value = state.max; render(); $("customMax").focus(); return; }
@@ -257,6 +317,7 @@ $("reset").addEventListener("click", () => {
   buildRanks(); render();
 });
 
+applyLang();
 buildRanks();
 render();
 </script>
